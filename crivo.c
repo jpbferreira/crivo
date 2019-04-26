@@ -1,44 +1,58 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <unistd.h>
 #include <pthread.h>
 
-int TAM = 8;
-int n = 10;
-int numerosNaoMarcados[] = {2, 3, 4, 5, 6, 7, 8, 9, 10};
+const int n = 50;
+int numerosNaoMarcados[] = {};
 
-void *crivo() {
+void *crivo(void *k) {
 
-    int valork = 2;
+    int *valork = (int*) k;
 
     do {
 
-        for (int i = valork-1; i < TAM; i++) {
-            if (numerosNaoMarcados[i] != 0 && numerosNaoMarcados[i]%valork == 0) {
+        for (int i = *valork-1; i < n; i++) {
+            if (numerosNaoMarcados[i] != 0 && numerosNaoMarcados[i]%*valork == 0) {
                 numerosNaoMarcados[i] = 0;
             }
         }
 
-        for (int i = valork-1; i < TAM; i++) {
+        for (int i = *valork-1; i < n; i++) {
             if (numerosNaoMarcados[i] != 0) {
-                valork = numerosNaoMarcados[i];
+                *valork = numerosNaoMarcados[i];
                 break;
             }
         }
 
-    } while((valork * valork) < n);
+    } while(pow(*valork, 2) < n);
+}
+
+void preencheVetor() {
+    for(int i = 0; i < n; i++) {
+        numerosNaoMarcados[i] = i+2;
+    }
 }
 
 int main() {
 
-    pthread_t thread_id; 
-    printf("Before Thread\n"); 
-    pthread_create(&thread_id, NULL, crivo, NULL); 
-    pthread_join(thread_id, NULL); 
-    printf("After Thread\n"); 
+    preencheVetor();
+
+    const int NUMERO_THREADS = sqrt(n);
+    
+    pthread_t thread[NUMERO_THREADS]; 
+
+    for(int i = 0; i < NUMERO_THREADS; i++) {
+        int k = (i+2);
+        pthread_create(&thread[i], NULL, crivo, (int*) &k); 
+    }
+
+    for(int i = 0; i < NUMERO_THREADS; i++)
+        pthread_join(thread[i], NULL);  
 
     printf("Numeros primos: ");
-    for(int i = 0; i < TAM; i++) {
+    for(int i = 0; i < n; i++) {
         if(numerosNaoMarcados[i] != 0)
             printf("%d ", numerosNaoMarcados[i]);
     }
